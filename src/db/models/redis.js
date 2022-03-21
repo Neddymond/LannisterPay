@@ -1,8 +1,6 @@
 const redis = require('redis');
 let client;
 
-
-
 if (process.env.REDISCLOUD_URL) {
   console.log('remote redis ===> ', process.env.REDISCLOUD_URL);
   client = redis.createClient({

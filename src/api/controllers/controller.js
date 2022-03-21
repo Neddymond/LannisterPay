@@ -47,16 +47,7 @@ exports.parseFeeConfigSpec = async (req, res) => {
       console.log('config spec ====> ', allConfig);
     }
 
-    for (let i = 0; i < allConfig.length; i++) {
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeId', allConfig[i].feeId);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeCurrency', allConfig[i].feeCurrency);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeLocale', allConfig[i].feeLocale);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeEntity', allConfig[i].feeEntity);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'entityProperty', allConfig[i].entityProperty);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeType', allConfig[i].feeType);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feeValue', allConfig[i].feeValue);
-      await redisClient.hSet(`configSpec:${i + 1}`, 'feePercentage', allConfig[i].feePercentage);
-    }
+    await hashConfigSpec(allConfig);
     
     const newFeeConfigurationSpec = await FeeConfigurationSpec.insertMany(allConfig);
     if (!newFeeConfigurationSpec) {
@@ -75,29 +66,21 @@ exports.computeTransactionFee = async (req, res) => {
   try {
     const transactionFeePayload = req.body;
     let feeConfigSpec = [];
+    console.log('keys ===> ', (await redisClient.scan(0)).keys);
 
-    // const redisConfig = await redisClient.hGetAll('configSpec:1');
-    for (const key of (await redisClient.scan(0)).keys) {
-      feeConfigSpec.push(JSON.parse(JSON.stringify(await redisClient.hGetAll(key))));
-    }
-    console.log('redis fee config spec ===> ', feeConfigSpec);
-
-    if (feeConfigSpec.length === 0) {
+    if ((await redisClient.scan(0)).keys && (await redisClient.scan(0)).keys.length > 0) {
+      console.log('=====> Inside hash');
+      for (const key of (await redisClient.scan(0)).keys) {
+        feeConfigSpec.push(JSON.parse(JSON.stringify(await redisClient.hGetAll(key))));
+        // console.log('redis fee config spec ===> ', feeConfigSpec);
+      }
+    } else {
+      console.log('====> Outside hash');
       feeConfigSpec = await FeeConfigurationSpec.find({});
       if (!feeConfigSpec) {
         return handleError('Config spec not found to compute this transaction', res, 404);
       }
-
-      for (let i = 0; i < feeConfigSpec.length; i++) {
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeId', feeConfigSpec[i].feeId);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeCurrency', feeConfigSpec[i].feeCurrency);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeLocale', feeConfigSpec[i].feeLocale);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeEntity', feeConfigSpec[i].feeEntity);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'entityProperty', feeConfigSpec[i].entityProperty);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeType', feeConfigSpec[i].feeType);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feeValue', feeConfigSpec[i].feeValue);
-        await redisClient.hSet(`configSpec:${i + 1}`, 'feePercentage', feeConfigSpec[i].feePercentage);
-      }
+      await hashConfigSpec(feeConfigSpec);
     }
     
     // console.log('fetched config ====>', feeConfigSpec);
@@ -146,7 +129,7 @@ const findMostSuitableFeeConfigSpec = (feeConfigSpec, transactionPayload) => {
     return mostSuitableConfig;
   }
 
-  console.log('after currency check ====> ', mostSuitableConfig);
+  // console.log('after currency check ====> ', mostSuitableConfig);
 
   // feeEntity
   const feeEntityExactMatchConfig = mostSuitableConfig.filter(cfg => cfg.feeEntity === transactionPayload.PaymentEntity.Type)
@@ -166,7 +149,7 @@ const findMostSuitableFeeConfigSpec = (feeConfigSpec, transactionPayload) => {
     return mostSuitableConfig;
   }
   
-  console.log('after fee entity check ====> ', mostSuitableConfig);
+  // console.log('after fee entity check ====> ', mostSuitableConfig);
 
 
   // feeLocal check
@@ -182,7 +165,7 @@ const findMostSuitableFeeConfigSpec = (feeConfigSpec, transactionPayload) => {
     return mostSuitableConfig;
   }
 
-  console.log('after fee local check ====> ', mostSuitableConfig);
+  // console.log('after fee local check ====> ', mostSuitableConfig);
 
   // entity property
   const feeEntityPropertyExactMatchConfig = mostSuitableConfig.filter(cfg => {
@@ -198,7 +181,7 @@ const findMostSuitableFeeConfigSpec = (feeConfigSpec, transactionPayload) => {
     return mostSuitableConfig;
   }
 
-  console.log('after entity property check ===> ', mostSuitableConfig);
+  // console.log('after entity property check ===> ', mostSuitableConfig);
 
   return mostSuitableConfig.pop();
 };
@@ -231,3 +214,16 @@ const calcChargeAmount = (appliedFeeValue, transactionFeePayload) => {
 
   return chargeAmount;
 };
+
+const hashConfigSpec = async (feeConfigSpec) => {
+  for (let i = 0; i < feeConfigSpec.length; i++) {
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeId', feeConfigSpec[i].feeId);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeCurrency', feeConfigSpec[i].feeCurrency);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeLocale', feeConfigSpec[i].feeLocale);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeEntity', feeConfigSpec[i].feeEntity);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'entityProperty', feeConfigSpec[i].entityProperty);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeType', feeConfigSpec[i].feeType);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feeValue', feeConfigSpec[i].feeValue);
+    await redisClient.hSet(`configSpec:${i + 1}`, 'feePercentage', feeConfigSpec[i].feePercentage);
+  }
+}
