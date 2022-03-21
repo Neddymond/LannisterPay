@@ -1,6 +1,7 @@
-const config = require('../../config/config');
 const redis = require('redis');
 let client;
+
+console.log(process.env.REDISCLOUD_URL);
 
 if (process.env.REDISCLOUD_URL) {
   client = redis.createClient(process.env.REDISCLOUD_URL, {no_ready_check: true});
