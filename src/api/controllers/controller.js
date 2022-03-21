@@ -217,13 +217,15 @@ const calcChargeAmount = (appliedFeeValue, transactionFeePayload) => {
 
 const hashConfigSpec = async (feeConfigSpec) => {
   for (let i = 0; i < feeConfigSpec.length; i++) {
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeId', feeConfigSpec[i].feeId);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeCurrency', feeConfigSpec[i].feeCurrency);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeLocale', feeConfigSpec[i].feeLocale);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeEntity', feeConfigSpec[i].feeEntity);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'entityProperty', feeConfigSpec[i].entityProperty);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeType', feeConfigSpec[i].feeType);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feeValue', feeConfigSpec[i].feeValue);
-    await redisClient.hSet(`configSpec:${i + 1}`, 'feePercentage', feeConfigSpec[i].feePercentage);
+    await Promise.all([
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeId', feeConfigSpec[i].feeId),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeCurrency', feeConfigSpec[i].feeCurrency),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeLocale', feeConfigSpec[i].feeLocale),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeEntity', feeConfigSpec[i].feeEntity),
+      redisClient.hSet(`configSpec:${i + 1}`, 'entityProperty', feeConfigSpec[i].entityProperty),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeType', feeConfigSpec[i].feeType),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feeValue', feeConfigSpec[i].feeValue),
+      redisClient.hSet(`configSpec:${i + 1}`, 'feePercentage', feeConfigSpec[i].feePercentage)
+    ]);
   }
 }
