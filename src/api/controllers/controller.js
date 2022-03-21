@@ -76,7 +76,7 @@ exports.computeTransactionFee = async (req, res) => {
       }
     } else {
       console.log('====> Outside hash');
-      feeConfigSpec = await FeeConfigurationSpec.find({});
+      feeConfigSpec = await FeeConfigurationSpec.find({}).lean();
       if (!feeConfigSpec) {
         return handleError('Config spec not found to compute this transaction', res, 404);
       }
