@@ -4,20 +4,6 @@ const { handleError } = require('../../utility/error');
 const FeeConfigurationSpec = mongoose.model('FeeConfiguration');
 const { redisClient } = require('../../db/models/redis');
 
-// const getFeeValue = (splitConfigSpec) => {
-//   if (splitConfigSpec[6] === 'FLAT') {return splitConfigSpec[7] }
-//   else if (splitConfigSpec[7].match(':')) { return splitConfigSpec[7].split(':')[0] }
-//   else { return null };
-// };
-
-// const getFeePercentage = (splitConfigSpec) => {
-//   if (splitConfigSpec[6] === 'PERC') { return splitConfigSpec[7] }
-//   else if (splitConfigSpec[7].match(':')) { return splitConfigSpec[7].split(':')[1] }
-//   else { return null }
-// }
-
-
-
 exports.parseFeeConfigSpec = async (req, res) => {
   try {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
@@ -124,6 +110,9 @@ exports.computeTransactionFee = async (req, res) => {
     console.log('most suitable config spec =======> ', mostSuitableCofigSpec);
 
     const appliedFeeValue = calcAppliedFeeValue(mostSuitableCofigSpec, transactionFeePayload);
+    if (!appliedFeeValue) {
+      return handleError('Can\'t compute applied fee value');
+    }
     console.log('applied fee value ====> ', appliedFeeValue);
 
     const chargeAmount = calcChargeAmount(appliedFeeValue, transactionFeePayload);
@@ -133,10 +122,10 @@ exports.computeTransactionFee = async (req, res) => {
     console.log('settlement amount ====> ', settleAmount);
 
     return res.status(200).send({
-      'AppliedFeeID': mostSuitableCofigSpec.feeId || '',
-      'AppliedFeeValue': appliedFeeValue || 0,
-      'ChargeAmount': chargeAmount || 0,
-      'SettlementAmount': settleAmount || 0
+      'AppliedFeeID': mostSuitableCofigSpec.feeId,
+      'AppliedFeeValue': appliedFeeValue,
+      'ChargeAmount': chargeAmount,
+      'SettlementAmount': settleAmount
     });
 
   } catch (error) {
