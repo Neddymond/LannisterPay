@@ -127,7 +127,7 @@ const findMostSuitableFeeConfigSpec = (feeConfigSpec, transactionPayload) => {
   const feeLocaleExactMatchConfig = R.reject(
     R.allPass([
       R.complement(R.propEq('feeLocale', payloadLocale)),
-      R.complement(R.propEq('feeEntity', '*'))
+      R.complement(R.propEq('feeLocale', '*'))
     ])
   )(mostSuitableConfig);
 
