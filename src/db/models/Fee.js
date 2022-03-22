@@ -10,8 +10,8 @@ let FeeConfigSpecSchema = new Schema({
   feeEntity: { type: String, required: true },
   entityProperty: { type: String, required: true },
   feeType: { type: String, required: true },
+  flatFeeValue: { type: Number },
   feeValue: { type: Number },
-  feePercentage: { type: Number },
 });
 
 module.exports = mongoose.model('FeeConfiguration', FeeConfigSpecSchema);
